@@ -98,6 +98,21 @@ a browser-side step-order guard: `main.ts` must not import the wiring while
 parser cases + `main.ts` calling this object + `send_freeze` / `send_thaw` +
 fixture move + `TD-COMMANDS.md`._
 
+_Progress 2026-11-15: step 5's operator docs written ahead of the code.
+`TD-COMMANDS.md` has a new "Staged: `freeze` / `thaw` (refused today)" section —
+the two frames (exact fixture-built TD bytes), what a lease does, every exit
+path, the rule-7 status texts, a staged limits table (`MIN_FREEZE_MS` 250,
+`MAX_FREEZE_MS` 10 000, `FREEZE_SILENCE_MS` 3 000) kept out of the live Limits
+table, and planned "screen stopped" troubleshooting rows. Four new cases in
+`tests/tdCommandsDoc.test.mjs` pin it: the limits equal `freezeLease.ts` and
+the fixture range; every frame shown is a `freeze_staged.built` row; every one
+is still refused by `parseTdCommand` and none sits under "Accepted" (the
+doc's half of the step-order guard — delete it in the lifting change); the
+status texts are what `describeFreeze` / `describeThaw` print. Step 2 below
+corrected: it still said `main.ts` wires the lease to `loop.stop()` /
+`loop.start()` (superseded on 11-12). Still refused; lifting it no longer
+includes writing `TD-COMMANDS.md`, only moving the staged section._
+
 ## Why `freeze` is different from `preset` and `setParams`
 
 `preset` and `setParams` are **idempotent and self-healing**: if TD vanishes
@@ -184,7 +199,10 @@ Following the 2026-10-23 contract rule (fixture first, then both twins):
 2. Browser: `parseTdCommand` cases; a small pure `createFreezeLease(now)`
    helper (start / renew / thaw / `remaining(now)`, NaN- and backwards-clock
    safe, like `createCommandGate`), unit-tested on its own; `main.ts` wires it
-   to `loop.stop()` / `loop.start()` and to the `TdClient` status callback.
+   to the `TdClient` status / command callbacks and gates kernel steps through
+   `createFreezeWiring` (`src/app/freezeWiring.ts`). _Corrected 2026-11-15:
+   this step originally said `loop.stop()` / `loop.start()`, which can't work —
+   a stopped loop never ticks the lease (see the 11-12 note)._
 3. TD: `MAX_FREEZE_MS` / `MIN_FREEZE_MS`, `make_freeze_command(ms)`,
    `make_thaw_command()`, `send_freeze(dat, ms)` / `send_thaw(dat)`, new
    `freeze` row in `morphogen_cmds`.
@@ -194,7 +212,9 @@ Following the 2026-10-23 contract rule (fixture first, then both twins):
    `tdCommandsDoc` drift rows for the new limits.
 5. Docs: `TD-COMMANDS.md` frame section, Limits rows and troubleshooting
    ("screen stopped" → check `#syncCmds` and the lease line); this page's
-   status line flips to "implemented".
+   status line flips to "implemented". _Staged 2026-11-15: all of it is
+   written in `TD-COMMANDS.md`'s "Staged" section; lifting = move it into
+   "Accepted" / Limits / the troubleshooting table and delete the doc guard._
 
 ## Open questions (for whoever picks this up)
 

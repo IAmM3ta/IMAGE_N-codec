@@ -2,6 +2,18 @@
 
 RedBot daily cadence notes for `IAmM3ta/MORPHOS`. Newest first.
 
+## 2026-11-15 (09:15 ET — daily commit)
+
+**Landed:** FREEZE-REVIEW step 5 (operator docs) written and drift-tested ahead of the code, so lifting the refusal no longer includes drafting `TD-COMMANDS.md` under pressure — only moving a reviewed section.
+
+- `docs/morphogen-redteam/TD-COMMANDS.md`: new "Staged: `freeze` / `thaw` (refused today)" section between Frames and Limits. It shows the two frames as the exact bytes `make_freeze_command(1500)` / `make_thaw_command()` build, says what a lease does (no kernel steps, canvas + Hum keep going, renew before expiry, refused not clamped), lists every browser-driven exit (expiry, `thaw`, leaving `open`, fresh ack, performer input, `FREEZE_SILENCE_MS` silence — hence keep calling `status_tick` during a hold), the rule-7 status texts and the `?debug=1` `freeze` shape, a **separate** staged limits table (`MIN_FREEZE_MS` 250, `MAX_FREEZE_MS` 10000, `FREEZE_SILENCE_MS` 3000), and five planned "screen stopped" troubleshooting rows. The Refused paragraph now names `thaw` too. A note in the section says exactly what to move when the refusal is lifted.
+- `morphogen-v2/tests/tdCommandsDoc.test.mjs`: 4 new cases scoped to that section — staged limits equal `freezeLease.ts` and the fixture's `freeze_ms_range`, and none of them leaks into the live Limits table; every inline frame is a `freeze_staged.built` row and both `freeze` and `thaw` appear; every frame is still refused by `parseTdCommand` and none sits under "Accepted" (doc half of the step-order guard — delete in the lifting change); status texts match `describeFreeze` / `describeThaw` and all five thaw reasons are listed. Mutation check: a wrong `MAX_FREEZE_MS` value, a frame TD wouldn't build (`ms:1600`) and a freeze row in the live Limits table each fail one test.
+- `FREEZE-REVIEW.md`: progress note; "Order of work" step 2 corrected (still said `main.ts` wires the lease to `loop.stop()` / `loop.start()`, superseded 11-12 — now points at `createFreezeWiring`); step 5 marked staged. README changelog.
+- Not changed: any `src/` file, `main.ts`, `parseTdCommand` (still refuses `freeze` / `thaw`), fixture, TD files. No runtime behaviour change.
+- Verified with `scripts/ci_local.sh all` (`PYTEST=/tmp/mv/bin/pytest`): `npm test` 198 pass (was 194); `tsc --noEmit` clean; root `pytest` 137 pass / 2 skipped (unchanged); no-WebGL check OK. Not tried in a browser or against TouchDesigner.
+
+**Next focus candidates:** lift the refusal as one reviewed change — `parseTdCommand` freeze / thaw cases, `main.ts` calling `createFreezeWiring` as in its header (including `freeze.local()` at each rule-5 input), `send_freeze` / `send_thaw` + `morphogen_cmds` row, fixture move, TD-COMMANDS staged-section move, delete the three step-order guards; a quick in-browser pass on `?perform=1`; STE / soft-quant work inside the codec `train_step`.
+
 ## 2026-11-14 (09:15 ET — daily commit)
 
 **Landed:** the `freeze` wiring recipe packaged as one pure object, so the clock mix-up fixed yesterday can't be re-typed into `main.ts` when the refusal is lifted.

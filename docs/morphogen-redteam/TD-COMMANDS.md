@@ -82,12 +82,71 @@ Accepted (v1):
     from a slowed CHOP (≤ 10/s), never every frame.
 
 Refused (parse returns `null`, frame dropped, session untouched):
-`freeze` (still reserved; its limits review — a browser-ended lease, so a
-dropped TD can't leave the Field stuck — is in
-[FREEZE-REVIEW.md](FREEZE-REVIEW.md) and lands fixture-first), out-of-range or
+`freeze` and `thaw` (still reserved; its limits review — a browser-ended lease,
+so a dropped TD can't leave the Field stuck — is in
+[FREEZE-REVIEW.md](FREEZE-REVIEW.md); the frames are staged below), out-of-range or
 extra-key `setParams` frames,
 any `v` other than `1`, missing `cmd`, arrays, non-JSON, malformed preset ids,
 and anything over the size cap.
+
+## Staged: `freeze` / `thaw` (refused today)
+
+_Added 2026-11-15 (FREEZE-REVIEW.md step 5, written ahead of the code). Every
+frame in this section is **refused** by the current build and counts as
+`refused` in the `#syncCmds` tally; nothing in TD sends them yet (there is no
+`send_freeze` / `send_thaw`). The section exists so the operator-facing text is
+reviewed, and drift-tested, before the refusal is lifted rather than written in
+the same rush. `tests/tdCommandsDoc.test.mjs` checks that every frame below is
+one of the fixture's `freeze_staged.built` rows **and** that `parseTdCommand`
+still returns `null` for it, and that the staged limits match
+`src/sync/freezeLease.ts`. Lifting the refusal = move this section into
+"Frames → Accepted", move the staged limit rows into the Limits table, delete
+the "staged frames stay refused" doc test, in the same change as the parser
+cases and the `main.ts` call into `createFreezeWiring`
+(`src/app/freezeWiring.ts`)._
+
+Planned frames (exact TD bytes from `make_freeze_command` / `make_thaw_command`
+in `td/morphogen_sync_commands.py`):
+
+- `{"v":1,"cmd":"freeze","ms":1500}` — hold the Field (no kernel steps; the
+  canvas keeps drawing the last field, Hum keeps its tone) for a **lease** of
+  `ms` milliseconds on the browser's clock. The browser ends it by itself when
+  the lease runs out; to hold longer, TD re-sends `freeze` before expiry (each
+  valid frame renews from "now"). `ms` must be an integer inside the staged
+  range below; anything else is **refused, not clamped**, like `setParams`.
+- `{"v":1,"cmd":"thaw"}` — end any lease at once. Accepted even when nothing
+  is frozen (a no-op that still counts as `applied`), so a cue-stack reset can
+  send it defensively.
+
+Every way out of a freeze is driven by the browser, so none of them needs TD
+to be alive: lease expiry; `thaw`; the Sync session leaving `open` (socket
+close, ack timeout, give-up, disconnect — before any reconnect is scheduled);
+a fresh ack (a new session never inherits a freeze); performer input (canvas
+press, ENTER, Reset, a preset step, a slider move — the performer outranks TD);
+and silence (no TD frame of any kind for `FREEZE_SILENCE_MS` while still
+`open`, which is why `status_tick(dat)` must keep running during a hold).
+
+While held the status line will read `frozen by TD · N s left`
+(`describeFreeze`); when a lease ends it reads `thawed (<reason>)`
+(`describeThaw`: `expired`, `thaw`, `disconnect`, `local` or `silence`), and
+`?debug=1` gains `freeze: {until, reason, held}`.
+
+| Staged limit | Value | Constant (browser / TD) |
+| --- | --- | --- |
+| Shortest lease (inclusive) | 250 ms | `MIN_FREEZE_MS` |
+| Longest lease (inclusive) | 10000 ms | `MAX_FREEZE_MS` |
+| TD silence that ends a lease | 3000 ms | `FREEZE_SILENCE_MS` |
+
+Planned troubleshooting rows (move them into the table under "Reading the two
+tallies" when the refusal is lifted):
+
+| What you see | Likely meaning | What to check |
+| --- | --- | --- |
+| The field stops moving and the status line says `frozen by TD · N s left` | TD holds a lease; it ends on its own within `MAX_FREEZE_MS`. | TD's cue stack; send `thaw`, or press the canvas. |
+| The field stops moving and the status line does **not** say `frozen by TD` | Not a freeze: the tab is hidden, or the loop stopped. | `document.hidden`, the HUD, the browser console. |
+| A long hold keeps ending early with `thawed (silence)` | TD stopped sending frames while the session stayed open. | That `status_tick(dat)` is still called every frame during the hold. |
+| A hold ends early with `thawed (expired)` | TD's renew came later than `ms`, or was paced out. | Re-send `freeze` well before expiry, at ≤ 10/s. |
+| `freeze` frames only grow the `refused` tally | `ms` outside the staged range or not an integer (refused, not clamped) — or a build from before the refusal was lifted, which refuses every `freeze`. | `make_freeze_command` raises on the same values; the fixture's `freeze_staged.browser_refuses`. |
 
 ## Limits
 
