@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run MORPHOS CI locally (added 2026-11-03).
+# Run IMAGE_N-codec CI locally (added 2026-11-03).
 #
 # Mirrors .github/workflows/ci.yml step for step, so "green here" means
 # "green on GitHub" without waiting for a push:

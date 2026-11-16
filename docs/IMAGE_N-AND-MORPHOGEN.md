@@ -1,11 +1,15 @@
-# MORPHOS and Morphogen
+# IMAGE_N and Morphogen
 
-This repo holds two separate projects that share a workflow and a name. Neither imports the other.
+This repo holds two separate projects that share a workflow. Neither imports the other.
+
+The **IMAGE_N** codec (this repository; **IMAGE_8** is the historical version name of the current pipeline) is a Stable Diffusion generative compression system. It is not [MORPHOS (Living Field)](https://github.com/IAmM3ta/MORPHOS-APP), the real-time Gray–Scott instrument at [morphos.grok.me](https://morphos.grok.me).
+
+The vendored **Morphogen v2** tree is a CPU Gray–Scott + Canvas 2D rebuild in the MORPHOS Living Field instrument lineage. It lives here for the no-WebGL / TouchDesigner research track. The live instrument is [MORPHOS-APP](https://github.com/IAmM3ta/MORPHOS-APP).
 
 | Artifact | Role |
 |----------|------|
-| **MORPHOS** (repo root codec) | Generative compression — tiny latent vector + SD prior (**not** RD pattern) |
-| **Morphogen v2** (`morphogen-v2/`) | Living RD audiovisual instrument — **CPU Gray–Scott + Canvas 2D**, no WebGL |
+| **IMAGE_N** (repo root codec) | Generative compression — tiny latent vector + SD prior (**not** RD pattern). IMAGE_8 is the historical version name of this pipeline. |
+| **Morphogen v2** (`morphogen-v2/`) | CPU Gray–Scott + Canvas 2D instrument in the MORPHOS Living Field lineage; no WebGL |
 | **Red-team** (`docs/morphogen-redteam/`) | Static + protocol (Elliot) + live UX findings → rebuild spec |
 
 Live reference (v1/WebGL): https://morphogen-synth.grok.me
@@ -18,7 +22,7 @@ cd morphogen-v2 && npm install && npm run dev
 
 A reading map for someone arriving cold. Paths are relative to the repo root.
 
-### MORPHOS codec (Python, repo root)
+### IMAGE_N codec (Python, repo root)
 
 | Path | What it is |
 |------|------------|

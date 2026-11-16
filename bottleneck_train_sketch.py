@@ -1,5 +1,5 @@
 """
-Bottleneck training loop sketch — IMAGE_8 / MORPHOS
+Bottleneck training loop sketch — IMAGE_8 / IMAGE_N
 
 The production path trains (or replaces) the mock compression / decompression
 MLPs end-to-end against a reconstruction + rate objective while the VAE and
@@ -711,7 +711,7 @@ def ans_check_one_code(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="MORPHOS bottleneck train sketch (no SD weights; mock latents)"
+        description="IMAGE_N bottleneck train sketch (IMAGE_8 workflow; no SD weights; mock latents)"
     )
     parser.add_argument("--steps", type=int, default=8)
     parser.add_argument("--batch-size", type=int, default=4)
@@ -821,7 +821,7 @@ def main() -> None:
     if args.learned_hyper_prior and not args.hyper_rate and not args.ans_hyper_hier_prior:
         parser.error("--learned-hyper-prior requires --hyper-rate (or --ans-hyper-hier-prior)")
 
-    print("MORPHOS bottleneck training sketch (mock latents, frozen-prior path not loaded)")
+    print("IMAGE_N bottleneck training sketch (IMAGE_8 workflow; mock latents, frozen-prior path not loaded)")
     print(f"rate_stats @ compact_dim={args.compact_dim}: {rate_stats(compact_dim=args.compact_dim)}")
     ste_on = (
         args.ste_quant

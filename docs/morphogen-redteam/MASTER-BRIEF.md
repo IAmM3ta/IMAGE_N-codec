@@ -61,7 +61,7 @@ Columns: **ID** | **Sev** | **Finding** | **Sources** | **Design implications fo
 | M-CLOCK | Medium | WS @ 50ms vs MIDI @ ~40ms phase desync; TD table full-rewrite each message. | Elliot M1 | Align pump rates or document sampling; consider delta updates later. |
 | M-GRID | Medium | `tdGrid` default true → 256 floats every pump; costly on tunnels. | Elliot M2 | Default grid off on non-localhost; UI cost hint. |
 | M-MIDI | Medium | WebMIDI Chrome-centric; Safari/iOS weak → no machine path when Sync HTTPS broken. **Live:** Chrome MIDI permission “Control and reprogram your MIDI devices” prompted (`shot-midi-prompt.webp`); blocked during probe. | Elliot M4, Live UX | Document MIDI as Chrome/desktop path (B); explain permission copy; do not claim iOS MIDI; Sync Idle when MIDI blocked + WS broken. |
-| M-NAME | Medium | Morphogen vs MORPHOS naming collision. | Elliot M5 | README / package name clarify “Morphogen synth UI ≠ MORPHOS codec”. |
+| M-NAME | Medium | Morphogen vs MORPHOS naming collision. **Resolved 2026-11-16:** codec repo renamed to `IMAGE_N-codec`; MORPHOS now names only the Living Field instrument. | Elliot M5 | README / package name clarify “Morphogen synth UI ≠ IMAGE_N codec” (formerly the MORPHOS codec). |
 | M-HUM | Medium | Schumann 7.83 narrative vs sample-rate drift pedantry. | Elliot M6 | Document base Hz; lock oscillator to absolute Hz; avoid overclaiming “resonance science”. |
 | M-META | Medium | OG/`x:game` frames as toy not AV instrument. | Elliot M7 | Meta/description as AV instrument; perform mode. |
 | M-GESTURE | Medium | First-gesture audio unlock vs projector click-track shows. | Elliot M8 | Visible unlock CTA; optional click-track docs for operators. |

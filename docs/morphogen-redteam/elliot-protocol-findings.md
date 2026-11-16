@@ -75,6 +75,8 @@ Safari/iOS WebMIDI support is weak/absent depending on version. HTTPS Sync broke
 ### M5 — Naming collision Morphogen vs MORPHOS
 Sibling naming to a generative codec repo. Operators, search, and “open source” incentives will pull the wrong tree under time pressure.
 
+*Resolved 2026-11-16: the codec repository was renamed to [`IMAGE_N-codec`](https://github.com/IAmM3ta/IMAGE_N-codec). The name MORPHOS now belongs only to the Living Field instrument (`IAmM3ta/MORPHOS-APP`).*
+
 ### M6 — Schumann / 7.83 Hz as narrative vs control surface
 Hum marketed as Schumann resonance sine pad. Fine as poetry; as a product claim it invites pedantic trust hits if the tuning isn’t actually locked to 7.83 under sample-rate drift. Incentive: science-branded AV audiences notice.
 

@@ -2,6 +2,8 @@
 
 First-principles rebuild of the Morphogen live AV instrument.
 
+This tree is a CPU Gray–Scott + Canvas 2D rebuild in the [MORPHOS (Living Field)](https://github.com/IAmM3ta/MORPHOS-APP) instrument lineage, vendored here beside the IMAGE_N codec. It is not the live instrument (that is MORPHOS-APP at [morphos.grok.me](https://morphos.grok.me)), and it is not the IMAGE_N codec itself.
+
 **Hard rule: no GPU canvas contexts (2D only).** Simulation is CPU Gray–Scott; display is Canvas 2D `putImageData`.
 
 ## Architecture (11 lines)

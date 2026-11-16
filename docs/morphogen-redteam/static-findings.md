@@ -319,4 +319,4 @@ Single route `/` via TanStack; no documented query deep links for preset/tdUrl. 
 
 ---
 
-*End of report. Scope limited to Morphogen client static analysis; MORPHOS codec / GitHub not modified.*
+*End of report. Scope limited to Morphogen client static analysis; IMAGE_N codec (then published as MORPHOS) / GitHub not modified.*

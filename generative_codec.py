@@ -1,5 +1,5 @@
 """
-Generative Compression Codec — RedBot / IMAGE_8 workflow
+IMAGE_N — Generative Compression Codec (IMAGE_8 / RedBot workflow)
 
 Conceptual pipeline:
   Image -> VAE encode (high-dim latent) -> learned extreme compression (tiny vector)

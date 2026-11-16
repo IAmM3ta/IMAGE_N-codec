@@ -1,6 +1,15 @@
-# MORPHOS status log
+# IMAGE_N status log
 
-RedBot daily cadence notes for `IAmM3ta/MORPHOS`. Newest first.
+RedBot daily cadence notes for `IAmM3ta/IMAGE_N-codec`. Newest first.
+
+## 2026-11-16 (05:00 ET — naming)
+
+**Landed:** repository and user-facing docs renamed from MORPHOS to IMAGE_N-codec, so the name MORPHOS belongs only to the Living Field instrument (`IAmM3ta/MORPHOS-APP`, https://morphos.grok.me). IMAGE_8 remains the historical version name of the current generative-compression pipeline.
+
+- Repo slug is `IMAGE_N-codec`. GitHub redirects from the old `IAmM3ta/MORPHOS` URL.
+- `docs/MORPHOS-AND-MORPHOGEN.md` renamed to `docs/IMAGE_N-AND-MORPHOGEN.md`; the map now states that Morphogen v2 is in the MORPHOS instrument lineage and that this codec is not that instrument.
+- README, STATUS header, CI comment titles, train-sketch CLI description / print, and red-team notes updated. Python module, class, and import paths were left unchanged.
+- No functional change.
 
 ## 2026-11-15 (09:15 ET — daily commit)
 
@@ -21,7 +30,7 @@ RedBot daily cadence notes for `IAmM3ta/MORPHOS`. Newest first.
 - `morphogen-v2/src/app/freezeWiring.ts` (new): `createFreezeWiring({now?, lastFrameAt, onThaw?, silenceMs?})` composes `createStepHold` + `createFreezeControl` + `createFreezeLease`. Methods: `freeze(ms)`, `thaw()`, `status(s)`, `local()`, `frame(steps)`, `held()`, `describe()`, `snapshot()`, plus `control` / `hold` for debugging. **No method takes a time**: the lease clock is injected once (default `Date.now`, which must match TdClient's `opts.now`), so onFrame's rAF timestamp can't reach the lease. `frame` ticks before gating, so the frame that crosses expiry already runs its steps. A throwing / non-finite / non-number `lastFrameAt` getter counts as "no TD frame" (it can end a hold via silence, never wedge one or throw out of onFrame). `describe()` = rule-7 line while held, else null; `snapshot()` = `{until, reason, held}`. Header has the intended `main.ts` wiring and says to call `frame` before the `document.hidden` early return.
 - `morphogen-v2/tests/freezeWiring.test.mjs` (new, 10 cases): real frame loop + fake rAF on a page-load clock with an epoch wall clock — pre-open freeze ignored; lease timed on the injected clock; expiry frame not held; silence via the getter; four bad getters still thaw; describe countdown + snapshot; leaving `open` / local / refused `ms`; a thaw never restarts a stopped loop; default clock is `Date.now`; step-order guard (`main.ts` must not import the wiring while `parseTdCommand` refuses `freeze`; delete in the lifting change). Mutation check: ticking on `performance.now()` fails 3 tests, dropping the tick fails 4. `freezeWiring` added to the esbuild test bundle in `package.json`.
 - `freezeControl.ts`: `halt` / `resume` hook docs still said `loop.stop()` / `loop.start()` (pre-11-12 plan); now point at the step hold and the new wiring. `loop.ts` `createStepHold` header points at `createFreezeWiring`.
-- Docs: FREEZE-REVIEW.md progress note; docs map row for `src/app/` (MORPHOS-AND-MORPHOGEN.md); README changelog.
+- Docs: FREEZE-REVIEW.md progress note; docs map row for `src/app/` (IMAGE_N-AND-MORPHOGEN.md); README changelog.
 - Not changed: `parseTdCommand` (still refuses `freeze` / `thaw`), `main.ts`, fixture, TD files. No runtime behaviour change.
 - Verified with `scripts/ci_local.sh all` (`PYTEST=/tmp/mv/bin/pytest`): `npm test` 194 pass (was 184); `tsc --noEmit` clean; root `pytest` 137 pass / 2 skipped (unchanged); no-WebGL check OK. Not tried in a browser or against TouchDesigner.
 
@@ -109,16 +118,16 @@ RedBot daily cadence notes for `IAmM3ta/MORPHOS`. Newest first.
 
 - `docs/morphogen-redteam/FREEZE-REVIEW.md` (new): why `freeze` differs from `preset` / `setParams` (its failure mode is a still screen that looks like a crash), the facts it relies on (checked on `main` this run: `ws.onclose` moves `open` → `reconnecting` with 500 ms–15 s backoff, every fresh ack resets gate / tally / `tdRtt()`, TD's 1 Hz `status_tick` heartbeat, idempotent `loop.start` / `stop` with no catch-up replay, local press already restarts the loop), and eight proposed rules: freeze is a lease `{ms}` in [250, 10 000] refused not clamped, explicit `thaw`, leaving `open` thaws before reconnect is scheduled, a fresh ack never inherits a freeze, local input wins, ~3 s of TD silence thaws, visible status / tally / debug state, no new trust. Mermaid state diagram of every exit path, the fixture → browser → TD → tests → docs order of work, and three open questions (render while frozen, Hum behaviour, the 10 s ceiling).
 - `morphogen-v2/src/sync/tdCommand.ts`: header comment only — the "still refused" note now summarises the review and points at the doc.
-- `docs/morphogen-redteam/TD-COMMANDS.md`: the refused list links the review; `freeze` stays named in backticks so the `tdCommandsDoc` "reserved commands are refused" test still holds. `docs/MORPHOS-AND-MORPHOGEN.md`: red-team table row for the new file. README changelog entry.
+- `docs/morphogen-redteam/TD-COMMANDS.md`: the refused list links the review; `freeze` stays named in backticks so the `tdCommandsDoc` "reserved commands are refused" test still holds. `docs/IMAGE_N-AND-MORPHOGEN.md`: red-team table row for the new file. README changelog entry.
 - Not run this pass: `scripts/ci_local.sh` (header comment + docs only, no build box in this run), so the 11-05 counts stand: root `pytest` 116 pass / 2 skipped, `npm test` 146 pass.
 
 **Next focus candidates:** implement the `freeze` lease fixture-first per the review, a quick in-browser pass on the slider layout in `?perform=1` (and a TD `send_params` cue), STE / soft-quant work inside the codec `train_step`.
 
 ## 2026-11-06 (09:30 ET — daily commit)
 
-**Landed:** a docs-only pass — `docs/MORPHOS-AND-MORPHOGEN.md` was a 12-line table, and after seven weeks of daily commits a new reader had no map of where the codec, the Morphogen v2 modules, the TD side and the red-team notes live.
+**Landed:** a docs-only pass — `docs/IMAGE_N-AND-MORPHOGEN.md` was a 12-line table, and after seven weeks of daily commits a new reader had no map of where the codec, the Morphogen v2 modules, the TD side and the red-team notes live.
 
-- `docs/MORPHOS-AND-MORPHOGEN.md`: kept the original artifact table and `npm run dev` snippet; added "Where things live" (codec files, `morphogen-v2/src/*` folders, `td/`, `tests/`, each red-team file and what to read it for), "Checking your work" (`scripts/ci_local.sh all|python|node`, bare root `pytest` skipping torch suites) and "Two contracts that are easy to break" (the TD ↔ browser fixture twins; the no-WebGL rule).
+- `docs/IMAGE_N-AND-MORPHOGEN.md`: kept the original artifact table and `npm run dev` snippet; added "Where things live" (codec files, `morphogen-v2/src/*` folders, `td/`, `tests/`, each red-team file and what to read it for), "Checking your work" (`scripts/ci_local.sh all|python|node`, bare root `pytest` skipping torch suites) and "Two contracts that are easy to break" (the TD ↔ browser fixture twins; the no-WebGL rule).
 - Every path in the map was checked against the repo's directory listings on `main` this run; no code, test or workflow file changed.
 - README changelog entry added. Not run this pass: `scripts/ci_local.sh` (docs-only change, no build box in this run), so the test counts from 11-05 stand: root `pytest` 116 pass / 2 skipped, `npm test` 146 pass.
 

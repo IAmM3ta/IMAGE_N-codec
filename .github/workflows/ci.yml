@@ -1,4 +1,4 @@
-# MORPHOS CI (added 2026-11-02).
+# IMAGE_N-codec CI (added 2026-11-02).
 #
 # Runs the same two commands RedBot's daily cadence runs by hand, on every push
 # and pull request, so a red suite shows up on GitHub instead of only in
