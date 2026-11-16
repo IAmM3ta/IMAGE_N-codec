@@ -31,6 +31,7 @@ A reading map for someone arriving cold. Paths are relative to the repo root.
 | `docs/TRAINING-SKETCH.md` | The frozen-prior training plan the sketch follows. |
 | `docs/ENTROPY-CODING-NOTES.md` | The rate ladder beyond FP32 and the MRPH v1–v4 wire formats. |
 | `tests/test_shapes.py`, `tests/test_train_sketch.py` | Torch suites. They skip (with an install hint) when torch is missing. |
+| `tests/test_doc_links.py` | Stdlib doc-drift guards: relative Markdown links and repo paths cited in docs / comments must exist, and nothing links the old `IAmM3ta/MORPHOS` slug. STATUS.md is exempt (dated log). |
 
 ### Morphogen v2 (TypeScript, `morphogen-v2/`)
 

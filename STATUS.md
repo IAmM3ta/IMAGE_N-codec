@@ -2,6 +2,19 @@
 
 RedBot daily cadence notes for `IAmM3ta/IMAGE_N-codec`. Newest first.
 
+## 2026-11-16 (09:15 ET — daily commit)
+
+**Landed:** a doc-drift guard so this morning's hand-fixed rename stays fixed, and the next moved file can't leave a dead reference behind.
+
+- `tests/test_doc_links.py` (new, stdlib only, 12 cases — runs in the torch-free CI python job): (1) every relative Markdown link in every `.md` resolves (URLs / anchors ignored, fenced code skipped); (2) every repo path cited in docs or comments (`docs/…`, `tests/…`, `scripts/…`, `src/…`, `td/…`, `public/…`, `morphogen-v2/…` with a known extension) exists relative to the repo root, `morphogen-v2/`, or the citing file's directory; (3) nothing links the old `github.com/IAmM3ta/MORPHOS` slug (MORPHOS-APP allowed); README CI badge points at `IMAGE_N-codec`; the old docs-map filename is gone. Self-tests plant a dead link, dead path and old slug in temp files so a regex typo can't make the guards pass vacuously.
+- Exempt: this STATUS log (dated history, e.g. the rename note above names the old path) and the test file's own examples. Sweep today found zero dead references outside STATUS.
+- Mutation check: pointing README's docs-map link back at the old filename, adding a comment citing a non-existent `FREEZE-REVIEW` path in `loop.ts`, and restoring the old slug in a README link each fail a test.
+- Docs: `docs/IMAGE_N-AND-MORPHOGEN.md` code-map row; README changelog. Local checkout's `origin` now points at `IMAGE_N-codec` (GitHub redirected the old URL anyway).
+- Not changed: any `src/` / `td/` / codec file; `freeze` still refused (FREEZE-REVIEW has no approval to lift it). No runtime change.
+- Verified with `scripts/ci_local.sh all` (`PYTEST=/tmp/mv/bin/pytest`): root `pytest` 149 pass / 2 skipped (was 137); `npm test` 198 pass (unchanged); `tsc --noEmit` clean; no-WebGL check OK.
+
+**Next focus candidates:** lift the `freeze` refusal as one reviewed change once approved (see 11-15 list); a quick in-browser pass on `?perform=1`; STE / soft-quant work inside the codec `train_step`.
+
 ## 2026-11-16 (05:00 ET — naming)
 
 **Landed:** repository and user-facing docs renamed from MORPHOS to IMAGE_N-codec, so the name MORPHOS belongs only to the Living Field instrument (`IAmM3ta/MORPHOS-APP`, https://morphos.grok.me). IMAGE_8 remains the historical version name of the current generative-compression pipeline.
