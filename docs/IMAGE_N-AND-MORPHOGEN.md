@@ -43,7 +43,7 @@ A reading map for someone arriving cold. Paths are relative to the repo root.
 | `src/app/` | The fixed-timestep frame loop, `createStepHold` (freeze gates kernel steps, not the loop) and `freezeWiring.ts` (the not-yet-wired single object `main.ts` will call for `freeze`, owning the lease clock). |
 | `src/ui/` | Panels, HUD, keyboard shortcuts, pointer seeding, Field feed / kill sliders. |
 | `src/sync/` | The TouchDesigner (TD) Sync client, URL checks, the TD → app command parser, `freezeLease.ts` (the not-yet-wired lease helper for a future `freeze` command) and `freezeControl.ts` (the not-yet-wired binding that halts / resumes the loop from that lease and TdClient status). |
-| `src/main.ts` | Wires all of the above together. |
+| `src/main.ts` | Wires all of the above together. Every input site in it has a row in FREEZE-REVIEW's "Rule 5 input map" (does it end a TD `freeze`?), kept in step by `tests/freezeInputs.test.mjs`. |
 | `td/` | Reference TouchDesigner-side Python: the auth gate, command builders and callbacks. |
 | `tests/` | Node tests (`npm test`) and the shared `fixtures/td-commands.v1.json` contract file. |
 

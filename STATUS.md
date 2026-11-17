@@ -2,6 +2,21 @@
 
 RedBot daily cadence notes for `IAmM3ta/IMAGE_N-codec`. Newest first.
 
+## 2026-11-17 (09:15 ET — daily commit)
+
+**Landed:** FREEZE-REVIEW rule 5 ("local input wins") mapped onto every input site in `morphogen-v2/src/main.ts`, so the lifting change knows exactly where `freeze.local()` goes, and where it must not.
+
+- `docs/morphogen-redteam/FREEZE-REVIEW.md`: new "Rule 5 input map" section (17 rows, keyed `<mount call>.<handler>` / `<target>:<event>` / `td.onCommand`) with a thaws column (yes / no / n/a / field only) and the reason for each, plus a 2026-11-17 progress note. Thaw sites: canvas press, ENTER, Reset (after confirm), `]` / `[` and the Field panel via `stepPreset`, slider `input`. No thaw: drag seeds, mute, lock loop, the preset cycler's `apply`, `td.onCommand`, visibility change.
+- Two traps written down before anyone wires it: (1) `onPress` only calls `start()` when `!loop.isRunning()`, and a held loop is still running (11-12 step hold), so the thaw must be unconditional; (2) the preset cycler's `apply` is also reached by TD's `preset` command, so thawing there would end TD's own freeze labelled "thawed (local)" — the thaw belongs in `stepPreset`.
+- `morphogen-v2/tests/freezeInputs.test.mjs` (new, 5 cases): scans `main.ts` for input sites and requires an exact one-to-one match with the map's rows (a new, removed or renamed site fails); pins the yes set to rule 5's list and the two traps to "no"; checks `td.onCommand` never reaches `stepPreset` (and `stepPreset` has exactly its 3 local callers); drives real `mountFieldSliders` to show `sync()` never calls `apply` while a slider move does. Self-test plants a fake handler so the scanner can't pass vacuously. Mutation check: deleting a map row, or flipping `td.onCommand` to yes, each fails one case. Kept after the refusal is lifted (the map stays true).
+- `src/app/freezeWiring.ts` header now points at the map and names both traps; `docs/IMAGE_N-AND-MORPHOGEN.md` `src/main.ts` row mentions it; README changelog.
+- Not changed: `main.ts`, parser, fixture, TD files; `freeze` still refused. No runtime change.
+- Verified with `scripts/ci_local.sh all` (`PYTEST=/tmp/mv/bin/pytest`): `npm test` 203 pass (was 198); `tsc --noEmit` clean; no-WebGL check OK; root `pytest` 149 pass / 2 skipped (unchanged).
+
+**Open, not decided here:** while frozen, a TD `preset` / `setParams` (or any local status text) still calls `setStatus` and would overwrite the rule-7 "frozen by TD · N s left" line; the lifting change needs to say which text wins.
+
+**Next focus candidates:** lift the `freeze` refusal as one reviewed change once approved (the map now lists its `local()` call sites); decide the status-line precedence above; a quick in-browser pass on `?perform=1`; STE / soft-quant work inside the codec `train_step`.
+
 ## 2026-11-16 (09:15 ET — daily commit)
 
 **Landed:** a doc-drift guard so this morning's hand-fixed rename stays fixed, and the next moved file can't leave a dead reference behind.

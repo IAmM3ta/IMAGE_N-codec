@@ -113,6 +113,19 @@ corrected: it still said `main.ts` wires the lease to `loop.stop()` /
 `loop.start()` (superseded on 11-12). Still refused; lifting it no longer
 includes writing `TD-COMMANDS.md`, only moving the staged section._
 
+_Progress 2026-11-17: rule 5 mapped onto the real inputs. "Local input wins"
+named five inputs, but `main.ts` has seventeen input sites, and two of the
+obvious places to put `freeze.local()` are wrong: the canvas `onPress` only
+calls `start()` when the loop is *not* running (a held loop is running, so that
+branch never fires while frozen), and the preset cycler's `apply` is shared
+with TD's own `preset` command (a TD preset would end TD's freeze and be
+labelled "thawed (local)"). The new "Rule 5 input map" section below decides
+every site; `tests/freezeInputs.test.mjs` fails if `main.ts` gains, loses or
+renames an input site without a row here, pins the yes / no column, and checks
+the two facts the map relies on (`sliders.sync()` never calls `apply`;
+`td.onCommand` never reaches `stepPreset`). Still refused; the lifting change
+now has an exact list of where `local()` goes._
+
 ## Why `freeze` is different from `preset` and `setParams`
 
 `preset` and `setParams` are **idempotent and self-healing**: if TD vanishes
@@ -170,6 +183,35 @@ a crashed tab. So the review is mostly about the exits, not the entry.
    `applied`. `?debug=1` snapshot gains `freeze: {until, reason}`.
 8. **No new trust.** Same parser, same size cap, same gate, authed sessions
    only, extra keys refused whole.
+
+## Rule 5 input map (staged 2026-11-17)
+
+Every input site in `morphogen-v2/src/main.ts`, keyed as
+`<mount call>.<handler>` or `<target>:<event>`, and whether it calls
+`freeze.local()` once the refusal is lifted. `tests/freezeInputs.test.mjs`
+keeps this table and `main.ts` in step: a new site without a row (or a row
+whose site is gone) fails, so the next input added to the page has to answer
+"does this end a TD freeze?" on the way in.
+
+| Site | Thaws? | Where `local()` goes / why |
+| --- | --- | --- |
+| `mountPointerSeeding.onPress` | yes | First line of `onPress`, **unconditionally** — today it only calls `start()` when `!loop.isRunning()`, and a held loop is still running (11-12), so hanging the thaw off that branch would never fire. |
+| `mountPointerSeeding.onSeed` | no | The press that began the stroke already thawed. |
+| `enter:click` | yes | In `start()`. A lease accepted before ENTER (session open, loop not yet started) is ended by ENTER, not inherited by the first frames. |
+| `mountPanelStubs.onPanel` | field only | The `field` branch thaws via `stepPreset`; `sync` and the stub panels only print help text. |
+| `mountPanelStubs.onReset` | yes | After the confirm is accepted; a cancelled confirm changes nothing, lease included. |
+| `mountPanelStubs.onLockLoop` | no | HUD loop counter; the field is untouched. |
+| `mountPanelStubs.onMuteToggle` | no | Sound only, and Hum holds during a freeze (open question 2). |
+| `mountKeyboardShortcuts.onMuteToggle` | no | Same as the button. |
+| `mountKeyboardShortcuts.onLockLoop` | no | Same as the button. |
+| `mountKeyboardShortcuts.onPresetNext` | yes | Via `stepPreset`, which only local inputs call. |
+| `mountKeyboardShortcuts.onPresetPrev` | yes | Via `stepPreset`. |
+| `mountFieldSliders.apply` | yes | Slider `input` events only — `sliders.sync()` (after any preset, TD's included) never calls `apply`, so TD can't thaw through it. |
+| `createPresetCycler.apply` | no | **Not here:** TD's `preset` command reaches it through `field.set`; thawing here would end TD's own freeze as "thawed (local)". |
+| `createFrameLoop.onFrame` | n/a | Calls `freeze.frame(steps)` before the `document.hidden` return (freezeWiring.ts header). |
+| `td.onCommand` | no | Remote. `freeze` / `thaw` route to `freeze.freeze(ms)` / `freeze.thaw()`; a TD `preset` / `setParams` during a hold changes the params and the steps stay held. |
+| `document:visibilitychange` | no | Hidden tabs are the accepted gap (11-12 note), not a performer action. |
+| `window:beforeunload` | n/a | Teardown. |
 
 ## Exit paths, in one picture
 
@@ -229,3 +271,9 @@ Following the 2026-10-23 contract rule (fixture first, then both twins):
 - Is 10 s the right ceiling? It is long enough for a dramatic hold and short
   enough that a lost renew is noticed within one musical phrase. Revisit after
   a live rehearsal.
+- Which status text wins while frozen? _Raised 2026-11-17._ A TD `preset` /
+  `setParams`, or a mute / lock-loop press (none of which thaw, per the rule 5
+  input map), still calls `setStatus` and would overwrite the rule-7
+  `frozen by TD · N s left` line. Options: re-assert `freeze.describe()` each
+  frame while held, or append ` · frozen N s` to those texts. Decide in the
+  lifting change.

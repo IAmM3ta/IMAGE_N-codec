@@ -28,6 +28,12 @@
  *   td.onStatus  → freeze.status(s)          (rules 3, 4)
  *   td.onCommand → freeze.freeze(cmd.ms) / freeze.thaw()   (rules 1, 2)
  *   canvas press / ENTER / Reset / preset / slider → freeze.local()   (rule 5)
+ *     — exactly which sites, and where in each, is FREEZE-REVIEW.md's "Rule 5
+ *     input map" (2026-11-17; tests/freezeInputs.test.mjs keeps it in step
+ *     with main.ts). Two traps: in onPress call local() unconditionally (a
+ *     held loop is still running, so the `!loop.isRunning()` branch never
+ *     fires while frozen), and put the preset thaw in stepPreset, not in the
+ *     preset cycler's apply, which TD's own `preset` command also reaches.
  *   onFrame: (steps, now) => { steps = freeze.frame(steps); if (document.hidden) return; … }
  * `frame` goes BEFORE the hidden-tab early return so that a browser which
  * still delivers (throttled) frames to a hidden tab keeps ticking the lease;
