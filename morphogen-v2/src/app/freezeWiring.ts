@@ -41,6 +41,11 @@
  * expires in the background ends on the first frame after the tab returns).
  * `describe()` gives the rule-7 status line while held; snapshot() is the
  * `?debug=1` shape.
+ *
+ * Status line (2026-11-18): the text the performer actually sees while held
+ * and just after a thaw comes from createFreezeStatus (src/app/freezeStatus.ts:
+ * "FROZEN by TD · 3.2s", "thawed — you took over", …), fed by `remaining()`
+ * each frame and by `onThaw`. `describe()` stays as the compact debug text.
  */
 
 import { createStepHold, type StepHold } from './loop';
@@ -84,6 +89,12 @@ export type FreezeWiring = {
   held(): boolean;
   /** Rule 7 status text while held ("frozen by TD · N s left"), else null. */
   describe(): string | null;
+  /**
+   * Lease ms left on the injected clock while held (null = unusable clock),
+   * else null. Feeds freezeStatus.frozen() (src/app/freezeStatus.ts, 11-18)
+   * so the live countdown never needs a clock of its own at the call site.
+   */
+  remaining(): number | null;
   /** `?debug=1`: lease until / last thaw reason, plus whether steps are held. */
   snapshot(): FreezeWiringSnapshot;
   /** Underlying pieces, for tests and the debug panel. */
@@ -138,6 +149,10 @@ export function createFreezeWiring(deps: FreezeWiringDeps): FreezeWiring {
     describe() {
       if (!hold.held()) return null;
       return describeFreeze(control.lease.remaining(clock()));
+    },
+    remaining() {
+      if (!hold.held()) return null;
+      return control.lease.remaining(clock());
     },
     snapshot() {
       return { ...control.lease.snapshot(), held: hold.held() };

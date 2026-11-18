@@ -19,7 +19,8 @@ import {
   parseTdCommand,
   pongFor,
 } from '../.test-build/tdCommand.mjs';
-import { MIN_FREEZE_MS, MAX_FREEZE_MS, FREEZE_SILENCE_MS, describeFreeze, describeThaw } from '../.test-build/freezeLease.mjs';
+import { MIN_FREEZE_MS, MAX_FREEZE_MS, FREEZE_SILENCE_MS } from '../.test-build/freezeLease.mjs';
+import { describeFrozen, THAW_STATUS_HOLD_MS, THAW_TEXT } from '../.test-build/freezeStatus.mjs';
 
 const doc = readFileSync(new URL('../../docs/morphogen-redteam/TD-COMMANDS.md', import.meta.url), 'utf8');
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/td-commands.v1.json', import.meta.url), 'utf8'));
@@ -168,16 +169,21 @@ test('every staged frame the doc shows is still refused — delete when freeze i
   assert.ok(!/"cmd":"(freeze|thaw)"/.test(accepted), 'no freeze / thaw frame under Accepted');
 });
 
-test('staged status-line texts in the doc are the ones freezeLease.ts prints (2026-11-15)', () => {
+test('staged status-line texts in the doc are the ones freezeStatus.ts prints (2026-11-15, texts 2026-11-18)', () => {
   const text = stagedSection().join('\n');
-  // describeFreeze(1500) -> "frozen by TD · 2 s left"; the doc shows it with N.
-  assert.equal(describeFreeze(1500), 'frozen by TD · 2 s left');
-  assert.ok(text.includes('`frozen by TD · N s left`'));
-  assert.ok(text.includes('`thawed (<reason>)`'));
+  // The pinned countdown line, its preset append, and the hold constant.
+  assert.equal(describeFrozen(3200), 'FROZEN by TD · 3.2s');
+  assert.ok(text.includes('`FROZEN by TD · <s>s`'));
+  assert.ok(text.includes(`\`${describeFrozen(3200)}\``));
+  assert.ok(text.includes(`\`${describeFrozen(3200, 'Coral')}\``));
+  assert.ok(text.includes(`\`THAW_STATUS_HOLD_MS\` (${THAW_STATUS_HOLD_MS} ms)`));
+  // The old compact forms must not linger in the operator docs.
+  assert.ok(!text.includes('s left`'), 'no stale "frozen by TD · N s left"');
+  assert.ok(!text.includes('`thawed ('), 'no stale "thawed (<reason>)"');
   for (const r of ['expired', 'thaw', 'disconnect', 'local', 'silence']) {
-    assert.equal(describeThaw(r), `thawed (${r})`);
-    assert.ok(text.includes(`\`${r}\``), `doc lists thaw reason ${r}`);
+    assert.ok(text.includes(`| \`${r}\` | \`${THAW_TEXT[r]}\` |`), `doc row for thaw reason ${r}`);
   }
+  assert.ok(text.includes('src/app/freezeStatus.ts'), 'staged section mentions src/app/freezeStatus.ts');
   for (const path of ['src/sync/freezeLease.ts', 'src/app/freezeWiring.ts', 'td/morphogen_sync_commands.py']) {
     assert.ok(text.includes(path), `staged section mentions ${path}`);
   }

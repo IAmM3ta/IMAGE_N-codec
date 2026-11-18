@@ -126,6 +126,28 @@ the two facts the map relies on (`sliders.sync()` never calls `apply`;
 `td.onCommand` never reaches `stepPreset`). Still refused; the lifting change
 now has an exact list of where `local()` goes._
 
+_Progress 2026-11-18: status-line precedence decided and staged (closes the
+11-17 open question below). New `morphogen-v2/src/app/freezeStatus.ts`
+(`createFreezeStatus({now})`, injected clock, no `Date.now` inside): while
+held the line is **pinned** to `FROZEN by TD · <s>s`, a live countdown in
+tenths rounded up and clamped at `0.0s` (an unusable clock prints just
+`FROZEN by TD`); a TD `preset` during the hold **appends**
+(`FROZEN by TD · 3.2s · preset: Coral`); every other status text (TD
+`setParams`, mute, lock loop) is remembered as the normal line and shown after
+the hold. On thaw the reason shows for `THAW_STATUS_HOLD_MS` (1500 ms), then
+the newest normal line returns. `THAW_TEXT` maps every `ThawReason` and is
+declared `satisfies Record<ThawReason, string>`, so a new reason fails
+`tsc --noEmit` until it has a phrase. `createFreezeWiring` gained
+`remaining()` (lease ms on its own clock while held) to feed the countdown.
+Nine node tests in `tests/freezeStatus.test.mjs` (formatting / clamp, preset
+append, every reason + hold expiry, bad clocks, re-freeze during a hold,
+exhaustiveness against `freezeLease.ts`, and a step-order guard: `main.ts`
+must not import it while `freeze` is refused — delete it in the lifting
+change), one for `remaining()` in `tests/freezeWiring.test.mjs`;
+`TD-COMMANDS.md`'s staged section and `tests/tdCommandsDoc.test.mjs` now use
+the new texts. Still refused; lifting it now also means routing `setStatus`
+through this object (wiring recipe in the `freezeStatus.ts` header)._
+
 ## Why `freeze` is different from `preset` and `setParams`
 
 `preset` and `setParams` are **idempotent and self-healing**: if TD vanishes
@@ -178,9 +200,14 @@ a crashed tab. So the review is mostly about the exits, not the entry.
    the current 1 Hz heartbeat), thaw. This covers a TD that is wedged but has
    not closed its socket. It reuses `commandStats().lastAt`, which `TdClient`
    already updates on every authed frame.
-7. **Visible state.** While frozen, the status line reads
-   `frozen by TD · N s left` and the `#syncCmds` tally counts the frame as
-   `applied`. `?debug=1` snapshot gains `freeze: {until, reason}`.
+7. **Visible state.** While frozen, the status line is pinned to
+   `FROZEN by TD · <s>s` (live, one decimal; a TD preset appends
+   `· preset: <name>`), and after a thaw it names the reason for 1.5 s
+   (`thawed — you took over` / `time's up` / `TD went quiet` /
+   `TD released` / `TD disconnected`) — see "Status-line precedence" below.
+   _Amended 2026-11-18; the 11-07 text was `frozen by TD · N s left`._ The
+   `#syncCmds` tally counts the frame as `applied`. `?debug=1` snapshot gains
+   `freeze: {until, reason}`.
 8. **No new trust.** Same parser, same size cap, same gate, authed sessions
    only, extra keys refused whole.
 
@@ -212,6 +239,35 @@ whose site is gone) fails, so the next input added to the page has to answer
 | `td.onCommand` | no | Remote. `freeze` / `thaw` route to `freeze.freeze(ms)` / `freeze.thaw()`; a TD `preset` / `setParams` during a hold changes the params and the steps stay held. |
 | `document:visibilitychange` | no | Hidden tabs are the accepted gap (11-12 note), not a performer action. |
 | `window:beforeunload` | n/a | Teardown. |
+
+## Status-line precedence (staged 2026-11-18)
+
+Built in `morphogen-v2/src/app/freezeStatus.ts`, tested in
+`morphogen-v2/tests/freezeStatus.test.mjs`, **not imported by `main.ts`**
+(guard test) — so runtime behaviour is unchanged until the refusal is lifted.
+
+| State | Status line | Notes |
+| --- | --- | --- |
+| Frozen | `FROZEN by TD · 3.2s` | Live: re-rendered every frame from `freeze.remaining()`. Tenths, rounded **up** (any time left never reads `0.0s`), clamped at `0.0s`, never negative. Unusable clock → `FROZEN by TD`. |
+| Frozen + TD `preset` | `FROZEN by TD · 3.2s · preset: Coral` | Appends, never replaces. Renewals keep it, a newer TD preset replaces it, a thaw drops it. |
+| Frozen + any other `setStatus` | (unchanged freeze line) | TD `setParams`, mute, lock loop: remembered as the normal line, shown after the thaw hold. Their own UI (sliders, mute button, HUD counter) already shows the change. |
+| Thawed, `local` | `thawed — you took over` | Performer input (rule 5). |
+| Thawed, `expired` | `thawed — time's up` | Lease ran out (rule 1). |
+| Thawed, `silence` | `thawed — TD went quiet` | No TD frame for `FREEZE_SILENCE_MS`, or the 11-13 clock guard (rule 6). |
+| Thawed, `thaw` | `thawed — TD released` | TD's explicit `thaw` (rule 2). |
+| Thawed, `disconnect` | `thawed — TD disconnected` | Session left `open`, or a fresh ack found a lease (rules 3, 4). |
+| After `THAW_STATUS_HOLD_MS` (1500 ms) | newest normal line | A normal update during the hold is kept and shown when the hold ends, so the reason is always readable. |
+
+Staged limits and safety: the reason map is `satisfies Record<ThawReason,
+string>` (a new `ThawReason` fails `tsc --noEmit`; the test also compares the
+keys with the union in `freezeLease.ts`). The clock is injected; a
+non-finite, throwing or backwards clock ends a thaw hold instead of extending
+it, so a clock fault can only hide a reason early, never pin one. A new freeze
+during a hold replaces the reason with the countdown. Lifting the refusal
+means: `setStatus` → `freezeStatus.normal(s)` + paint; `onThaw` →
+`freezeStatus.thawed(r)`; each frame `freezeStatus.frozen(freeze.remaining())`
+while held, then paint; the TD `preset` branch calls `freezeStatus.preset(name)`
+while held; delete the guard test.
 
 ## Exit paths, in one picture
 
@@ -271,9 +327,8 @@ Following the 2026-10-23 contract rule (fixture first, then both twins):
 - Is 10 s the right ceiling? It is long enough for a dramatic hold and short
   enough that a lost renew is noticed within one musical phrase. Revisit after
   a live rehearsal.
-- Which status text wins while frozen? _Raised 2026-11-17._ A TD `preset` /
+- ~~Which status text wins while frozen?~~ _Raised 2026-11-17._ **Answered
+  2026-11-18: the freeze line wins, and is pinned.** A TD `preset` /
   `setParams`, or a mute / lock-loop press (none of which thaw, per the rule 5
-  input map), still calls `setStatus` and would overwrite the rule-7
-  `frozen by TD · N s left` line. Options: re-assert `freeze.describe()` each
-  frame while held, or append ` · frozen N s` to those texts. Decide in the
-  lifting change.
+  input map), still calls `setStatus`. Decision and staged code: see
+  "Status-line precedence (staged 2026-11-18)" above.

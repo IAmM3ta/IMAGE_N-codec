@@ -2,6 +2,19 @@
 
 RedBot daily cadence notes for `IAmM3ta/IMAGE_N-codec`. Newest first.
 
+## 2026-11-18 (09:00 ET — daily commit)
+
+**Landed:** FREEZE-REVIEW's open question "which status text wins while frozen?" (raised 11-17) answered and built as staged, tested code: the freeze line wins and is pinned, a TD preset appends, and every thaw says why for 1.5 s.
+
+- `morphogen-v2/src/app/freezeStatus.ts` (new): `formatCountdown` (tenths, rounded up, clamped at `0.0`, null for an unusable clock), `describeFrozen` (`FROZEN by TD · 3.2s`, `… · preset: Coral`), `THAW_TEXT` / `describeThawReason` (`local` → `thawed — you took over`, `expired` → `thawed — time's up`, `silence` → `thawed — TD went quiet`, `thaw` → `thawed — TD released`, `disconnect` → `thawed — TD disconnected`), `THAW_STATUS_HOLD_MS` = 1500, and `createFreezeStatus({now})` (`normal` / `frozen` / `preset` / `thawed` / `text` / `mode`). Injected clock only; a non-finite, throwing or backwards clock ends a thaw hold rather than extending it. `THAW_TEXT` is `satisfies Record<ThawReason, string>` — checked by mutation: dropping a phrase, or adding a reason to `ThawReason`, fails `tsc --noEmit` (and the new exhaustiveness test).
+- `src/app/freezeWiring.ts`: new `remaining()` (lease ms on the wiring's own clock while held, else null) so the countdown never needs a clock at the call site; header points at freezeStatus. `src/sync/freezeLease.ts`: comments only (`describeFreeze` / `describeThaw` stay as the compact debug form; `ThawReason` notes the typecheck link).
+- Tests: `tests/freezeStatus.test.mjs` (new, 9 cases: countdown format / clamp, pinned line + remembered normal, preset append, every reason + hold expiry at exactly 1500 ms + an update during the hold, bad clocks, re-freeze during a hold, exhaustiveness vs the `ThawReason` union in `freezeLease.ts`, step-order guard that `main.ts` doesn't import it while `freeze` is refused — delete in the lifting change); `tests/freezeWiring.test.mjs` +1 (`remaining()`); `tests/tdCommandsDoc.test.mjs` staged-texts case now pins the new texts and forbids the old `N s left` / `thawed (<reason>)` forms. `package.json` test bundle gains `freezeStatus`.
+- Docs: FREEZE-REVIEW.md progress note, rule 7 amended, new "Status-line precedence (staged 2026-11-18)" section (table + staged limits + lifting steps), open question closed; `TD-COMMANDS.md` staged section and planned troubleshooting rows use the new texts (reason table); docs map rows for `src/app/` and FREEZE-REVIEW; README changelog.
+- Not changed: `main.ts`, parser, fixture, TD files; `freeze` still refused. No runtime change.
+- Verified: `npm test` 213 pass (was 203); `tsc --noEmit` clean; no-WebGL check OK; root `pytest` 149 pass / 2 skipped (unchanged, doc-link guard included).
+
+**Next focus candidates:** lift the `freeze` refusal as one reviewed change once approved (input map + status wiring recipe are both written down now); revisit the 10 s ceiling after a live rehearsal; a quick in-browser pass on `?perform=1`; STE / soft-quant work inside the codec `train_step`.
+
 ## 2026-11-17 (09:15 ET — daily commit)
 
 **Landed:** FREEZE-REVIEW rule 5 ("local input wins") mapped onto every input site in `morphogen-v2/src/main.ts`, so the lifting change knows exactly where `freeze.local()` goes, and where it must not.

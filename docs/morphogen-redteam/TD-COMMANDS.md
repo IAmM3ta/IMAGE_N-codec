@@ -126,9 +126,22 @@ press, ENTER, Reset, a preset step, a slider move — the performer outranks TD)
 and silence (no TD frame of any kind for `FREEZE_SILENCE_MS` while still
 `open`, which is why `status_tick(dat)` must keep running during a hold).
 
-While held the status line will read `frozen by TD · N s left`
-(`describeFreeze`); when a lease ends it reads `thawed (<reason>)`
-(`describeThaw`: `expired`, `thaw`, `disconnect`, `local` or `silence`), and
+While held the status line will be pinned to a live countdown,
+`FROZEN by TD · <s>s` (one decimal, rounded up, never below `0.0s`, e.g.
+`FROZEN by TD · 3.2s`); a TD `preset` during the hold appends instead of
+replacing it (`FROZEN by TD · 3.2s · preset: Coral`), and other status texts
+wait until the hold ends. When a lease ends the line shows why for
+`THAW_STATUS_HOLD_MS` (1500 ms), then returns to the normal line
+(`src/app/freezeStatus.ts`, decided 2026-11-18):
+
+| Reason | Status line |
+| --- | --- |
+| `local` | `thawed — you took over` |
+| `expired` | `thawed — time's up` |
+| `silence` | `thawed — TD went quiet` |
+| `thaw` | `thawed — TD released` |
+| `disconnect` | `thawed — TD disconnected` |
+
 `?debug=1` gains `freeze: {until, reason, held}`.
 
 | Staged limit | Value | Constant (browser / TD) |
@@ -142,10 +155,10 @@ tallies" when the refusal is lifted):
 
 | What you see | Likely meaning | What to check |
 | --- | --- | --- |
-| The field stops moving and the status line says `frozen by TD · N s left` | TD holds a lease; it ends on its own within `MAX_FREEZE_MS`. | TD's cue stack; send `thaw`, or press the canvas. |
-| The field stops moving and the status line does **not** say `frozen by TD` | Not a freeze: the tab is hidden, or the loop stopped. | `document.hidden`, the HUD, the browser console. |
-| A long hold keeps ending early with `thawed (silence)` | TD stopped sending frames while the session stayed open. | That `status_tick(dat)` is still called every frame during the hold. |
-| A hold ends early with `thawed (expired)` | TD's renew came later than `ms`, or was paced out. | Re-send `freeze` well before expiry, at ≤ 10/s. |
+| The field stops moving and the status line says `FROZEN by TD · <s>s` | TD holds a lease; it ends on its own within `MAX_FREEZE_MS`. | TD's cue stack; send `thaw`, or press the canvas. |
+| The field stops moving and the status line does **not** say `FROZEN by TD` | Not a freeze: the tab is hidden, or the loop stopped. | `document.hidden`, the HUD, the browser console. |
+| A long hold keeps ending early with `thawed — TD went quiet` | TD stopped sending frames while the session stayed open. | That `status_tick(dat)` is still called every frame during the hold. |
+| A hold ends early with `thawed — time's up` | TD's renew came later than `ms`, or was paced out. | Re-send `freeze` well before expiry, at ≤ 10/s. |
 | `freeze` frames only grow the `refused` tally | `ms` outside the staged range or not an integer (refused, not clamped) — or a build from before the refusal was lifted, which refuses every `freeze`. | `make_freeze_command` raises on the same values; the fixture's `freeze_staged.browser_refuses`. |
 
 ## Limits

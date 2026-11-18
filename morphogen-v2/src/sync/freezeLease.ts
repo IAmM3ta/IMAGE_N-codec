@@ -35,7 +35,11 @@ export const MAX_FREEZE_MS = 10_000;
 /** No TD frame for this long while frozen → thaw (rule 6: 2 × 1 s heartbeat + 1 s). */
 export const FREEZE_SILENCE_MS = 3_000;
 
-/** Why the last lease ended. 'expired' and 'silence' come from check(). */
+/**
+ * Why the last lease ended. 'expired' and 'silence' come from check().
+ * Adding a reason here fails `tsc --noEmit` until THAW_TEXT in
+ * src/app/freezeStatus.ts has a status-line phrase for it (2026-11-18).
+ */
 export type ThawReason = 'expired' | 'thaw' | 'disconnect' | 'local' | 'silence';
 
 /** `?debug=1` snapshot: `until` is the client clock the lease ends at (null when running). */
@@ -150,14 +154,23 @@ export function createFreezeLease(silenceMs: number = FREEZE_SILENCE_MS): Freeze
   };
 }
 
-/** Status-line text while frozen (rule 7). Whole seconds, rounded up, never "0 s left". */
+/**
+ * Compact text while frozen (rule 7). Whole seconds, rounded up, never "0 s left".
+ * Since 2026-11-18 the performer-facing status line is createFreezeStatus in
+ * src/app/freezeStatus.ts ("FROZEN by TD · 3.2s"); this stays as the short
+ * debug / wiring.describe() form.
+ */
 export function describeFreeze(remainingMs: number | null): string {
   if (remainingMs === null || !Number.isFinite(remainingMs)) return 'frozen by TD';
   const s = Math.max(1, Math.ceil(remainingMs / 1000));
   return `frozen by TD · ${s} s left`;
 }
 
-/** Status-line text after a lease ends, e.g. "thawed (local)" (rule 5). */
+/**
+ * Compact text after a lease ends, e.g. "thawed (local)" (rule 5). The
+ * performer-facing phrase per reason is THAW_TEXT in src/app/freezeStatus.ts
+ * (2026-11-18), which must cover every ThawReason above.
+ */
 export function describeThaw(reason: ThawReason): string {
   return `thawed (${reason})`;
 }

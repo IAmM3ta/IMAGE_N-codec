@@ -191,3 +191,18 @@ test('step order: main.ts does not import freezeWiring while freeze is refused',
   const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
   if (refused) assert.doesNotMatch(main, /freezeWiring|createFreezeWiring/);
 });
+
+// 2026-11-18: remaining() feeds the freezeStatus countdown on the wiring's own
+// clock (no `now` at the call site), and is null whenever steps aren't held.
+test('remaining() reads the lease on the injected clock while held, null otherwise', () => {
+  const clock = { wall: EPOCH };
+  const w = createFreezeWiring({ now: () => clock.wall, lastFrameAt: () => clock.wall });
+  assert.equal(w.remaining(), null, 'nothing held yet');
+  w.status('open');
+  assert.equal(w.freeze(2000), true);
+  assert.equal(w.remaining(), 2000);
+  clock.wall += 800;
+  assert.equal(w.remaining(), 1200);
+  w.local();
+  assert.equal(w.remaining(), null, 'after a thaw');
+});
