@@ -148,6 +148,27 @@ change), one for `remaining()` in `tests/freezeWiring.test.mjs`;
 the new texts. Still refused; lifting it now also means routing `setStatus`
 through this object (wiring recipe in the `freezeStatus.ts` header)._
 
+_Progress 2026-11-19: step 2's "`parseTdCommand` cases" staged as their own
+parser. New `morphogen-v2/src/sync/freezeFrame.ts` (`parseFreezeFrame(raw)`)
+is the shape check the lifting change will move into `parseTdCommand`: the
+same envelope pre-checks (string, `MAX_COMMAND_BYTES`, JSON object, `v` 1),
+then exactly `{v, cmd:"freeze", ms}` with `ms` judged by the lease's own
+`isValidFreezeMs` (so parser and lease share one range and one predicate), or
+exactly `{v, cmd:"thaw"}`. Out-of-range / non-integer / missing `ms` and any
+extra key refuse the whole frame (rules 1, 8); every other command returns
+null, so it is not a second general parser. Eight node tests in
+`tests/freezeFrame.test.mjs` read the shared fixture: every
+`freeze_staged.built` row parses to the command its `build` row implies, every
+`freeze_staged.browser_refuses` row and `lease_rejects_ms` value is refused,
+hand-typed junk (`NaN`, `1e400`, `-0`, arrays) too, the size cap is exact,
+every top-level fixture frame is null, a sweep across both range edges shows
+the parser accepts exactly what `createFreezeLease().start` accepts, and a
+step-order guard: `main.ts`, `tdCommand.ts` and `tdClient.ts` must not import
+it while `parseTdCommand` refuses `freeze` — delete it in the lifting change.
+Still refused; lifting no longer writes new untrusted-input parsing, it moves
+two tested branches (inline them — `freezeFrame.ts` imports from
+`tdCommand.ts`, so the reverse import would be a cycle)._
+
 ## Why `freeze` is different from `preset` and `setParams`
 
 `preset` and `setParams` are **idempotent and self-healing**: if TD vanishes
@@ -301,6 +322,9 @@ Following the 2026-10-23 contract rule (fixture first, then both twins):
    `createFreezeWiring` (`src/app/freezeWiring.ts`). _Corrected 2026-11-15:
    this step originally said `loop.stop()` / `loop.start()`, which can't work —
    a stopped loop never ticks the lease (see the 11-12 note)._
+   _Staged 2026-11-19: the parser cases are `parseFreezeFrame` in
+   `src/sync/freezeFrame.ts`, fixture-tested; lifting = move its two branches
+   into `parseTdCommand`._
 3. TD: `MAX_FREEZE_MS` / `MIN_FREEZE_MS`, `make_freeze_command(ms)`,
    `make_thaw_command()`, `send_freeze(dat, ms)` / `send_thaw(dat)`, new
    `freeze` row in `morphogen_cmds`.

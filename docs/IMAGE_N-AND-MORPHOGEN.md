@@ -42,7 +42,7 @@ A reading map for someone arriving cold. Paths are relative to the repo root.
 | `src/audio/` | The Hum audio engine. |
 | `src/app/` | The fixed-timestep frame loop, `createStepHold` (freeze gates kernel steps, not the loop) `freezeWiring.ts` (the not-yet-wired single object `main.ts` will call for `freeze`, owning the lease clock) and `freezeStatus.ts` (the not-yet-wired status-line text while frozen and just after a thaw). |
 | `src/ui/` | Panels, HUD, keyboard shortcuts, pointer seeding, Field feed / kill sliders. |
-| `src/sync/` | The TouchDesigner (TD) Sync client, URL checks, the TD → app command parser, `freezeLease.ts` (the not-yet-wired lease helper for a future `freeze` command) and `freezeControl.ts` (the not-yet-wired binding that halts / resumes the loop from that lease and TdClient status). |
+| `src/sync/` | The TouchDesigner (TD) Sync client, URL checks, the TD → app command parser, `freezeLease.ts` (the not-yet-wired lease helper for a future `freeze` command) `freezeControl.ts` (the not-yet-wired binding that halts / resumes the loop from that lease and TdClient status) and `freezeFrame.ts` (the not-yet-wired, fixture-tested shape check for the `freeze` / `thaw` frames that `parseTdCommand` will absorb when the refusal is lifted). |
 | `src/main.ts` | Wires all of the above together. Every input site in it has a row in FREEZE-REVIEW's "Rule 5 input map" (does it end a TD `freeze`?), kept in step by `tests/freezeInputs.test.mjs`. |
 | `td/` | Reference TouchDesigner-side Python: the auth gate, command builders and callbacks. |
 | `tests/` | Node tests (`npm test`) and the shared `fixtures/td-commands.v1.json` contract file. |
@@ -56,7 +56,7 @@ A reading map for someone arriving cold. Paths are relative to the repo root.
 | `static-findings.md`, `elliot-protocol-findings.md`, `live-ux-findings.md` | The three evidence streams behind the brief. |
 | `SYNC-AUTH.md` | The hello → ack handshake, reconnect backoff, status chip and URL allowlist. |
 | `TD-COMMANDS.md` | The TD → app command channel: frames, limits, troubleshooting. |
-| `FREEZE-REVIEW.md` | Design review for the still-refused `freeze` command: lease rules, every exit path, the rule 5 input map, status-line precedence, and the fixture-first order of work. |
+| `FREEZE-REVIEW.md` | Design review for the still-refused `freeze` command: lease rules, every exit path, the rule 5 input map, status-line precedence, the staged frame parser (`src/sync/freezeFrame.ts`), and the fixture-first order of work. |
 
 ## Checking your work
 

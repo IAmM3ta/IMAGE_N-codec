@@ -2,6 +2,18 @@
 
 RedBot daily cadence notes for `IAmM3ta/IMAGE_N-codec`. Newest first.
 
+## 2026-11-19 (09:00 ET — daily commit)
+
+**Landed:** the last unwritten piece of FREEZE-REVIEW step 2 — the browser-side shape check for the `freeze` / `thaw` frames — staged as its own fixture-tested parser, so the lifting change moves tested code instead of writing new untrusted-input parsing on the day it opens the door.
+
+- `morphogen-v2/src/sync/freezeFrame.ts` (new): `parseFreezeFrame(raw)` → `{cmd:'freeze', ms}` / `{cmd:'thaw'}` / null. Same envelope pre-checks as `parseTdCommand` (string, `MAX_COMMAND_BYTES`, JSON object, `v` 1); `freeze` needs exactly `v`, `cmd`, `ms` with `ms` passing the lease's `isValidFreezeMs` (integer 250–10 000, refused not clamped); `thaw` needs exactly `v`, `cmd`; any extra key refuses the whole frame; preset / ping / status / setParams return null (not a second general parser). Header documents the lifting recipe (inline the two branches into `parseTdCommand` — the reverse import would be a cycle — then delete the file).
+- Tests: `tests/freezeFrame.test.mjs` (new, 8 cases): every `freeze_staged.built` row parses to the command its `build` row implies; every `freeze_staged.browser_refuses` row and `lease_rejects_ms` value refused, plus hand-typed junk (`NaN`, `Infinity`, `1e400`, `-0`, arrays, objects, `10000.5`); exact-keys (incl. `__proto__`) and key-order / `2e3` spelling; envelope (non-strings, `v` 2 / `"1"`, case-sensitive `cmd`, size cap exact at 512 / 513); every top-level fixture frame null; parser ≡ `isValidFreezeMs` ≡ `createFreezeLease().start` across both range edges; fresh objects; step-order guard (`main.ts`, `tdCommand.ts`, `tdClient.ts` must not import it while `freeze` is refused, and `parseTdCommand` still refuses every staged frame) — delete in the lifting change. `package.json` test bundle gains the `freezeFrame` entry.
+- Docs: FREEZE-REVIEW.md 2026-11-19 progress note and step 2 "Staged" annotation; `docs/IMAGE_N-AND-MORPHOGEN.md` docs map (`src/sync/` and FREEZE-REVIEW rows); README changelog.
+- Not changed: `main.ts`, `tdCommand.ts`, `tdClient.ts`, fixture, TD files; `freeze` still refused. No runtime change.
+- Verified: `npm test` 221 pass (was 213); `tsc --noEmit` clean; no-WebGL check OK; root `pytest` 149 pass / 2 skipped (unchanged, doc-link guard included).
+
+**Next focus candidates:** lift the `freeze` refusal as one reviewed change once approved (parser branches, input map and status wiring recipe are all staged now); revisit the 10 s ceiling after a live rehearsal; a quick in-browser pass on `?perform=1`; STE / soft-quant work inside the codec `train_step`.
+
 ## 2026-11-18 (09:00 ET — daily commit)
 
 **Landed:** FREEZE-REVIEW's open question "which status text wins while frozen?" (raised 11-17) answered and built as staged, tested code: the freeze line wins and is pinned, a TD preset appends, and every thaw says why for 1.5 s.
